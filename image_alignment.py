@@ -1,9 +1,9 @@
 from PIL import Image
 
-im = Image.open("images/im2.jpg")
+im = Image.open("images/im3.jpg")
 print("size", im.size)
 
-# im.show()
+im.show()
 
 
 print ("width", im.size[0])

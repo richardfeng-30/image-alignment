@@ -23,6 +23,7 @@ print(x, y)
 target_area = blue.crop((x, y, x + target_size, y + target_size))
 target_area.show()
 
+# transform into single intensity array
 def pixel_intensity(image):
     width, height = image.size
     image = image.convert("RGB")
@@ -32,8 +33,7 @@ def pixel_intensity(image):
     for y in range(height):
         row = []
         for x in range(width):
-            r, g, b = pixels[x, y]
-            row.append(r)
+            row.append(pixels[x, y][0]) #RGB are the same
         intensity.append(row)
     
     return intensity
@@ -47,11 +47,13 @@ def find_offset(target, full_image):
     image_h, image_w = len(full_image), len(full_image[0])
     min_difference = float('inf')
     dx, dy = -1, -1
+    # loop through full image
     for i in range(image_h - target_h):
         for j in range(image_w - target_w):
             total_difference = 0
             for x in range(target_h):
                 for y in range(target_w):
+                    # find difference between target and full image
                     total_difference += abs(target[x][y] - full_image[i + x][j + y])
                     if total_difference > min_difference:
                         break
@@ -71,6 +73,7 @@ dy_r -= y
 print(f"green offset: ({dx_g}, {dy_g})")
 print(f"red offset: ({dx_r}, {dy_r})")
 
+# use dimensions of blue image
 green_aligned = green.crop((dx_g, dy_g, dx_g + blue.width, dy_g + blue.height))
 red_aligned = red.crop((dx_r, dy_r, dx_r + blue.width, dy_r + blue.height))
 

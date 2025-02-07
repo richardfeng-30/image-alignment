@@ -1,29 +1,5 @@
 from PIL import Image
 
-im = Image.open("images/im1.jpg")
-print("size", im.size)
-
-# im.show()
-
-width, height = im.size[0], im.size[1]
-third = height // 3
-
-blue = im.crop((0, 0, im.size[0], third + 20))
-green = im.crop((0, third - 10, im.size[0], third * 2 + 10))
-red = im.crop((0, third * 2 - 10, im.size[0], third * 3))
-
-blue.show()
-green.show()
-red.show()
-
-target_size = 20
-x = (width - target_size) // 2
-y = (third - target_size) // 2
-print(x, y)
-target_area = blue.crop((x, y, x + target_size, y + target_size))
-target_area.show()
-
-# transform into single intensity array
 def pixel_intensity(image):
     width, height = image.size
     image = image.convert("RGB")
@@ -38,44 +14,50 @@ def pixel_intensity(image):
     
     return intensity
 
-target_intensity = pixel_intensity(target_area)
-green_intensity = pixel_intensity(green)
-red_intensity = pixel_intensity(red)
-
 def find_offset(target, full_image):
-    target_h, target_w = len(target), len(target[0])
-    image_h, image_w = len(full_image), len(full_image[0])
     min_difference = float('inf')
     dx, dy = -1, -1
-    # loop through full image
-    for i in range(image_h - target_h):
-        for j in range(image_w - target_w):
-            total_difference = 0
-            for x in range(target_h):
-                for y in range(target_w):
+    for i in range(-15, 15):
+        for j in range(-15, 15):
+            score = 0
+            # define target to be center of image
+            target_size = 100
+            x = (width - target_size) // 2
+            y = (third - target_size) // 2
+            for k in range(x, x + target_size):
+                for l in range(y, y + target_size):
                     # find difference between target and full image
-                    total_difference += abs(target[x][y] - full_image[i + x][j + y])
-                    if total_difference > min_difference:
+                    score += (target[k][l] - full_image[i + k][j + l]) ** 2
+                    if score > min_difference:
                         break
-            if total_difference < min_difference:
-                min_difference = total_difference
+            if score < min_difference:
+                min_difference = score
                 dx, dy = j, i
-    print(dx, dy)
     return dx, dy
 
-dx_g, dy_g = find_offset(target_intensity, green_intensity)
-dx_g -= x
-dy_g -= y
-dx_r, dy_r = find_offset(target_intensity, red_intensity)
-dx_r -= x
-dy_r -= y
+for i in range(1, 7):
+    im = Image.open(f"images/im{i}.jpg")
+    print("size", im.size)
 
-print(f"green offset: ({dx_g}, {dy_g})")
-print(f"red offset: ({dx_r}, {dy_r})")
+    width, height = im.size[0], im.size[1]
+    third = height // 3
 
-# use dimensions of blue image
-green_aligned = green.crop((dx_g, dy_g, dx_g + blue.width, dy_g + blue.height))
-red_aligned = red.crop((dx_r, dy_r, dx_r + blue.width, dy_r + blue.height))
+    blue = im.crop((0, 0, im.size[0], third + 20))
+    green = im.crop((0, third - 10, im.size[0], third * 2 + 10))
+    red = im.crop((0, third * 2 - 10, im.size[0], third * 3))
 
-merged = Image.merge("RGB", (blue, green_aligned, red_aligned))
-merged.show()
+    target_intensity = pixel_intensity(green)
+    blue_intensity = pixel_intensity(blue)
+    red_intensity = pixel_intensity(red)
+
+    dx_g, dy_g = find_offset(target_intensity, blue_intensity)
+    dx_r, dy_r = find_offset(target_intensity, red_intensity)
+
+    print(f"blue offset: ({dx_g}, {dy_g})")
+    print(f"red offset: ({dx_r}, {dy_r})")
+
+    blue_aligned = blue.crop((dx_g, dy_g, dx_g + green.width, dy_g + green.height))
+    red_aligned = red.crop((dx_r, dy_r, dx_r + green.width, dy_r + green.height))
+
+    merged = Image.merge("RGB", (red_aligned, green, blue_aligned))
+    merged.show()
